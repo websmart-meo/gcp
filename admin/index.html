@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Green Chaos Pub — Админ-панель</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="jungle-bg" aria-hidden="true">
+        <div class="vignette"></div>
+        <svg class="leaf leaf--tl" viewBox="-130 -130 260 270">
+          <use href="#cloverShape" />
+        </svg>
+        <svg class="leaf leaf--br" viewBox="-130 -130 260 270">
+          <use href="#cloverShape" />
+        </svg>
+        <svg class="leaf leaf--tr" viewBox="-130 -130 260 270">
+          <use href="#cloverShape" />
+        </svg>
+        <svg class="leaf leaf--bl" viewBox="-130 -130 260 270">
+          <use href="#cloverShape" />
+        </svg>
+        <svg class="leaf leaf--mid" viewBox="-130 -130 260 270">
+          <use href="#cloverShape" />
+        </svg>
+        <svg class="leaf leaf--top" viewBox="-130 -130 260 270">
+          <use href="#cloverShape" />
+        </svg>
+        <svg class="leaf leaf--left" viewBox="-130 -130 260 270">
+          <use href="#cloverShape" />
+        </svg>
+        <svg class="leaf leaf--right" viewBox="-130 -130 260 270">
+          <use href="#cloverShape" />
+        </svg>
+
+        <svg width="0" height="0" style="position: absolute">
+          <defs>
+            <path
+              id="cloverShape"
+              d="M0,0 C-8,-30 -50,-45 -50,-85 C-50,-108 -25,-115 -10,-100 C-4,-94 0,-88 0,-82 C0,-88 4,-94 10,-100 C25,-115 50,-108 50,-85 C50,-45 8,-30 0,0 Z
+				M0,0 C30,-8 45,-50 85,-50 C108,-50 115,-25 100,-10 C94,-4 88,0 82,0 C88,0 94,4 100,10 C115,25 108,50 85,50 C45,50 30,8 0,0 Z
+				M0,0 C8,30 50,45 50,85 C50,108 25,115 10,100 C4,94 0,88 0,82 C0,88 -4,94 -10,100 C-25,115 -50,108 -50,85 C-50,45 -8,30 0,0 Z
+				M0,0 C-30,8 -45,50 -85,50 C-108,50 -115,25 -100,10 C-94,4 -88,0 -82,0 C-88,0 -94,-4 -100,-10 C-115,-25 -108,-50 -85,-50 C-45,-50 -30,-8 0,0 Z
+				M0,0 L0,60"
+            />
+          </defs>
+        </svg>
+      </div>
+
+      <header class="menu-header">
+        <span class="kicker">— панель управления —</span>
+        <h1>Green&nbsp;Chaos&nbsp;Pub</h1>
+        <p class="subtitle">Админ-панель меню</p>
+        <div class="ornament">
+          <span class="ornament__line"></span>
+          <span class="ornament__leaf">❦</span>
+          <span class="ornament__line"></span>
+        </div>
+      </header>
+
+      <div class="admin-toolbar">
+        <button id="editBtn" class="btn btn--primary" type="button">Редактировать</button>
+        <button id="saveBtn" class="btn btn--primary" type="button" hidden>Сохранить</button>
+        <button id="cancelBtn" class="btn btn--ghost" type="button" hidden>Отмена</button>
+        <button id="downloadBtn" class="btn btn--ghost" type="button">Скачать меню (JPG)</button>
+        <button id="resetBtn" class="btn btn--danger-ghost" type="button">
+          Сбросить к исходному меню
+        </button>
+      </div>
+      <p id="statusMsg" class="admin-status" aria-live="polite"></p>
+
+      <main class="menu-columns" id="menuColumns"></main>
+
+      <footer class="menu-footer">
+        <div class="ornament">
+          <span class="ornament__line"></span>
+          <span class="ornament__leaf">❦</span>
+          <span class="ornament__line"></span>
+        </div>
+        <p class="copyright">&copy; 2026 Green Chaos Pub</p>
+      </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="../menu-data.js"></script>
+    <script src="../menu-store.js"></script>
+    <script src="../menu-render.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>

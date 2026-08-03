@@ -1,0 +1,531 @@
+:root {
+	--bg-deep: #0d2612;
+	--bg-mid: #163b1c;
+	--bg-light: #1f4d27;
+	--gold: #cea15b;
+	--gold-soft: #e3c07f;
+	--cream: #f2e9d8;
+	--cream-dim: rgba(242, 233, 216, 0.62);
+	--line: rgba(206, 161, 91, 0.35);
+	--card: rgba(255, 255, 255, 0.035);
+	--card-border: rgba(206, 161, 91, 0.22);
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html, body {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	min-height: 100vh;
+	font-family: 'Montserrat', sans-serif;
+	color: var(--cream);
+	background:
+		radial-gradient(ellipse 120% 80% at 50% -10%, var(--bg-light) 0%, transparent 55%),
+		radial-gradient(ellipse 140% 100% at 90% 110%, #123018 0%, transparent 60%),
+		linear-gradient(160deg, var(--bg-mid) 0%, var(--bg-deep) 65%, #061a0c 100%);
+	background-attachment: fixed;
+	position: relative;
+	overflow-x: hidden;
+	animation: pageFade 0.9s ease both;
+}
+
+@keyframes pageFade {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+/* ---------- Jungle decorative background ---------- */
+
+.jungle-bg {
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+	overflow: hidden;
+}
+
+.jungle-bg .vignette {
+	position: absolute;
+	inset: 0;
+	background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.leaf {
+	position: absolute;
+	fill: none;
+	stroke: #39ff6a;
+	stroke-width: 2.4;
+	filter: drop-shadow(0 0 6px rgba(57, 255, 106, 0.6)) drop-shadow(0 0 18px rgba(57, 255, 106, 0.3));
+	animation: neonPulse 5s ease-in-out infinite;
+}
+
+.leaf path:first-child,
+.leaf use {
+	fill: #123018;
+	stroke: #39ff6a;
+}
+
+@keyframes neonPulse {
+	0%, 100% {
+		filter: drop-shadow(0 0 6px rgba(57, 255, 106, 0.6)) drop-shadow(0 0 18px rgba(57, 255, 106, 0.3));
+	}
+	50% {
+		filter: drop-shadow(0 0 10px rgba(57, 255, 106, 0.85)) drop-shadow(0 0 28px rgba(57, 255, 106, 0.5));
+	}
+}
+
+.leaf--tl {
+	top: -60px;
+	left: -70px;
+	width: 260px;
+	height: 390px;
+	opacity: 0.5;
+	transform: rotate(18deg);
+	animation-delay: 0s;
+}
+
+.leaf--tr {
+	top: -40px;
+	right: -90px;
+	width: 220px;
+	height: 330px;
+	opacity: 0.35;
+	transform: rotate(-150deg) scaleX(-1);
+	animation-delay: -1.2s;
+}
+
+.leaf--bl {
+	bottom: -80px;
+	left: -60px;
+	width: 240px;
+	height: 360px;
+	opacity: 0.4;
+	transform: rotate(-20deg) scaleX(-1);
+	animation-delay: -2.4s;
+}
+
+.leaf--br {
+	bottom: -70px;
+	right: -80px;
+	width: 280px;
+	height: 420px;
+	opacity: 0.55;
+	transform: rotate(165deg);
+	animation-delay: -3.6s;
+}
+
+.leaf--mid {
+	top: 45%;
+	left: 50%;
+	width: 200px;
+	height: 300px;
+	opacity: 0.14;
+	transform: translate(-50%, -50%) rotate(8deg);
+	animation-delay: -0.8s;
+}
+
+.leaf--top {
+	top: -30px;
+	left: 55%;
+	width: 160px;
+	height: 240px;
+	opacity: 0.22;
+	transform: translateX(-50%) rotate(100deg) scaleX(-1);
+	animation-delay: -4.2s;
+}
+
+.leaf--left {
+	top: 55%;
+	left: -50px;
+	width: 170px;
+	height: 255px;
+	opacity: 0.24;
+	transform: translateY(-50%) rotate(-55deg);
+	animation-delay: -1.8s;
+}
+
+.leaf--right {
+	top: 20%;
+	right: -40px;
+	width: 150px;
+	height: 225px;
+	opacity: 0.2;
+	transform: rotate(60deg) scaleX(-1);
+	animation-delay: -3s;
+}
+
+/* ---------- Layout ---------- */
+
+.wrap {
+	position: relative;
+	z-index: 1;
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 64px 28px 56px;
+}
+
+.menu-header {
+	text-align: center;
+	margin-bottom: 44px;
+}
+
+.kicker {
+	display: block;
+	font-family: 'Cormorant Garamond', serif;
+	font-style: italic;
+	font-size: 1.15rem;
+	letter-spacing: 0.08em;
+	color: var(--gold-soft);
+	margin-bottom: 10px;
+}
+
+.menu-header h1 {
+	font-family: 'Cinzel Decorative', 'Playfair Display', serif;
+	font-weight: 700;
+	font-size: clamp(2.2rem, 5.6vw, 3.7rem);
+	margin: 0;
+	letter-spacing: 0.02em;
+	color: var(--cream);
+	text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55), 0 0 40px rgba(206, 161, 91, 0.18);
+	background: linear-gradient(180deg, #f7ecd6 0%, var(--gold-soft) 55%, var(--gold) 100%);
+	-webkit-background-clip: text;
+	background-clip: text;
+	-webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+	margin: 10px 0 0;
+	font-family: 'Montserrat', sans-serif;
+	font-weight: 500;
+	letter-spacing: 0.35em;
+	text-transform: uppercase;
+	font-size: 0.85rem;
+	color: var(--cream-dim);
+}
+
+.ornament {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+	margin-top: 20px;
+}
+
+.ornament__line {
+	height: 1px;
+	width: 70px;
+	background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+.ornament__leaf {
+	color: var(--gold);
+	font-size: 1.1rem;
+}
+
+/* ---------- Menu columns (auto-balanced) ---------- */
+
+.menu-columns {
+	column-count: 2;
+	column-gap: 34px;
+}
+
+.group {
+	break-inside: avoid;
+	-webkit-column-break-inside: avoid;
+	display: inline-block;
+	width: 100%;
+	background: var(--card);
+	border: 1px solid var(--card-border);
+	padding: 26px 28px 20px;
+	margin: 0 0 28px;
+	backdrop-filter: blur(3px);
+	box-shadow: 0 12px 30px -18px rgba(0, 0, 0, 0.6);
+	transition: border-color 0.25s ease, transform 0.25s ease;
+}
+
+.group:hover {
+	border-color: rgba(206, 161, 91, 0.5);
+	transform: translateY(-2px);
+}
+
+.group__title {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+	margin: 0 0 16px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--line);
+	font-family: 'Playfair Display', serif;
+	font-weight: 700;
+	font-size: 1.35rem;
+	color: var(--gold-soft);
+	letter-spacing: 0.02em;
+}
+
+.group__title .badge {
+	font-family: 'Montserrat', sans-serif;
+	font-weight: 600;
+	font-size: 0.7rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--bg-deep);
+	background: linear-gradient(135deg, var(--gold-soft), var(--gold));
+	padding: 4px 10px;
+	border-radius: 20px;
+	white-space: nowrap;
+}
+
+.group__list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.group__list li {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	padding: 7px 0;
+	font-size: 0.97rem;
+	line-height: 1.4;
+}
+
+.group__list--flat li {
+	padding: 6px 0;
+}
+
+.item {
+	color: var(--cream);
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+.item em {
+	font-style: normal;
+	color: var(--cream-dim);
+	font-weight: 400;
+	font-size: 0.86em;
+	margin-left: 4px;
+}
+
+.dots {
+	flex: 1;
+	border-bottom: 2px dotted rgba(206, 161, 91, 0.4);
+	transform: translateY(-4px);
+	min-width: 12px;
+}
+
+.price {
+	color: var(--gold-soft);
+	font-weight: 600;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Footer ---------- */
+
+.menu-footer {
+	text-align: center;
+	margin-top: 20px;
+	color: var(--cream-dim);
+}
+
+.copyright {
+	margin: 18px 0 0;
+	font-size: 0.75rem;
+	letter-spacing: 0.06em;
+	opacity: 0.7;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 480px) {
+	.menu-header h1 {
+		white-space: normal;
+	}
+}
+
+@media (max-width: 760px) {
+	.menu-columns {
+		column-count: 1;
+	}
+
+	.wrap {
+		padding: 44px 18px 40px;
+	}
+
+	.group {
+		padding: 22px 20px 16px;
+	}
+
+	.item {
+		white-space: normal;
+	}
+}
+
+/* ---------- Admin panel ---------- */
+
+.admin-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	justify-content: center;
+	margin-bottom: 18px;
+}
+
+.btn {
+	font-family: 'Montserrat', sans-serif;
+	font-weight: 600;
+	font-size: 0.85rem;
+	letter-spacing: 0.03em;
+	border-radius: 8px;
+	padding: 11px 22px;
+	border: 1px solid transparent;
+	cursor: pointer;
+	transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.btn:hover {
+	transform: translateY(-1px);
+}
+
+.btn:active {
+	transform: translateY(0);
+}
+
+.btn--primary {
+	color: var(--bg-deep);
+	background: linear-gradient(135deg, var(--gold-soft), var(--gold));
+}
+
+.btn--ghost {
+	color: var(--gold-soft);
+	background: rgba(255, 255, 255, 0.04);
+	border-color: var(--card-border);
+}
+
+.btn--danger-ghost {
+	color: #e37b6b;
+	background: rgba(227, 123, 107, 0.08);
+	border-color: rgba(227, 123, 107, 0.35);
+}
+
+.btn--sm {
+	padding: 6px 12px;
+	font-size: 0.75rem;
+	border-radius: 6px;
+}
+
+.admin-status {
+	text-align: center;
+	min-height: 1.4em;
+	margin: 0 0 20px;
+	color: var(--gold-soft);
+	font-size: 0.85rem;
+	letter-spacing: 0.02em;
+}
+
+.admin-add-group {
+	display: block;
+	margin: 0 auto 40px;
+}
+
+.admin-edit-row--title {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 14px;
+}
+
+.admin-input {
+	font-family: 'Montserrat', sans-serif;
+	color: var(--cream);
+	background: rgba(0, 0, 0, 0.25);
+	border: 1px solid var(--card-border);
+	border-radius: 6px;
+	padding: 7px 10px;
+	font-size: 0.9rem;
+	min-width: 0;
+}
+
+.admin-input:focus {
+	outline: none;
+	border-color: var(--gold);
+}
+
+.admin-input--title {
+	flex: 2;
+	font-weight: 700;
+	font-size: 1rem;
+}
+
+.admin-input--note {
+	flex: 1.4;
+}
+
+.admin-item-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 8px;
+}
+
+.admin-item-row .admin-input:first-child {
+	flex: 2;
+}
+
+.admin-input--price {
+	flex: 0.6;
+	min-width: 64px;
+}
+
+.admin-add-item {
+	margin-top: 4px;
+}
+
+/* A4 export container: reuses the site's card styling at print scale, off-
+   screen and hidden from the user. Its background is left transparent here —
+   html2canvas captures only the header/menu/footer text and cards; the
+   jungle background gradient and the four-leaf clovers are drawn separately
+   onto a canvas (see admin.js drawExportBackground/drawLeavesOnCanvas) and
+   composited underneath. html2canvas cannot reliably rasterize inline <svg>
+   leaves once there's enough other content sharing the same capture (only
+   the first of 8 would render, confirmed by testing), so leaves never touch
+   the DOM for export at all. */
+
+.a4-export {
+	position: fixed;
+	top: 0;
+	left: -99999px;
+	width: 1240px;
+	max-width: none;
+	margin: 0;
+	padding: 70px 64px;
+	background: none;
+}
+
+.a4-export .menu-header h1 {
+	background: none;
+	-webkit-text-fill-color: var(--gold-soft);
+	color: var(--gold-soft);
+}
+
+.a4-export .menu-columns {
+	column-gap: 30px;
+}
+
+.a4-export .group {
+	backdrop-filter: none;
+	padding: 20px 22px 14px;
+}
+
+.a4-export .group__list li {
+	font-size: 0.86rem;
+	padding: 5px 0;
+}
