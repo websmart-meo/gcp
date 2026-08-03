@@ -1,4 +1,20 @@
 (function () {
+	// NOTE: this is a client-side gate only -- admin.js is a public file, so
+	// anyone can read these credentials by viewing source. It stops casual
+	// visitors from seeing the admin UI, nothing more. The Firestore document
+	// itself is still writable by anyone who calls its API directly (per the
+	// open security rules), regardless of this login.
+	var ADMIN_LOGIN = 'admin-gcp';
+	var ADMIN_PASSWORD = '123123123';
+	var AUTH_KEY = 'greenChaosPubAdminAuthed';
+
+	var loginGate = document.getElementById('loginGate');
+	var loginUser = document.getElementById('loginUser');
+	var loginPass = document.getElementById('loginPass');
+	var loginError = document.getElementById('loginError');
+	var adminGated = document.getElementById('adminGated');
+	var logoutBtn = document.getElementById('logoutBtn');
+
 	var menuColumns = document.getElementById('menuColumns');
 	var statusMsg = document.getElementById('statusMsg');
 	var editBtn = document.getElementById('editBtn');
@@ -153,18 +169,36 @@
 	}
 
 	function showReadView() {
-		renderMenuSections(MenuStore.load(), menuColumns);
-		editBtn.hidden = false;
-		saveBtn.hidden = true;
-		cancelBtn.hidden = true;
+		menuColumns.setAttribute('aria-busy', 'true');
+		return MenuStore.load()
+			.then(function (data) {
+				renderMenuSections(data, menuColumns);
+				editBtn.hidden = false;
+				saveBtn.hidden = true;
+				cancelBtn.hidden = true;
+			})
+			.finally(function () {
+				menuColumns.removeAttribute('aria-busy');
+			});
 	}
 
 	editBtn.addEventListener('click', function () {
-		renderMenuEditor(MenuStore.load(), menuColumns);
-		editBtn.hidden = true;
-		saveBtn.hidden = false;
-		cancelBtn.hidden = false;
-		showStatus('');
+		editBtn.disabled = true;
+		MenuStore.load()
+			.then(function (data) {
+				renderMenuEditor(data, menuColumns);
+				editBtn.hidden = true;
+				saveBtn.hidden = false;
+				cancelBtn.hidden = false;
+				showStatus('');
+			})
+			.catch(function (err) {
+				console.error(err);
+				showStatus('Не удалось загрузить меню для редактирования. Попробуйте ещё раз.');
+			})
+			.finally(function () {
+				editBtn.disabled = false;
+			});
 	});
 
 	saveBtn.addEventListener('click', function () {
@@ -173,9 +207,21 @@
 			showStatus('Нужен хотя бы один раздел с названием.');
 			return;
 		}
-		MenuStore.save(data);
-		showReadView();
-		showStatus('Меню обновлено — изменения уже видны на главной странице.');
+		saveBtn.disabled = true;
+		MenuStore.save(data)
+			.then(function () {
+				return showReadView();
+			})
+			.then(function () {
+				showStatus('Меню обновлено — изменения уже видны на главной странице.');
+			})
+			.catch(function (err) {
+				console.error(err);
+				showStatus('Не удалось сохранить меню. Проверьте соединение и попробуйте ещё раз.');
+			})
+			.finally(function () {
+				saveBtn.disabled = false;
+			});
 	});
 
 	cancelBtn.addEventListener('click', function () {
@@ -185,10 +231,143 @@
 
 	resetBtn.addEventListener('click', function () {
 		if (!confirm('Сбросить меню к исходному варианту? Все изменения будут потеряны.')) return;
-		MenuStore.reset();
-		showReadView();
-		showStatus('Меню сброшено к исходному варианту.');
+		resetBtn.disabled = true;
+		MenuStore.reset()
+			.then(function () {
+				return showReadView();
+			})
+			.then(function () {
+				showStatus('Меню сброшено к исходному варианту.');
+			})
+			.catch(function (err) {
+				console.error(err);
+				showStatus('Не удалось сбросить меню. Проверьте соединение и попробуйте ещё раз.');
+			})
+			.finally(function () {
+				resetBtn.disabled = false;
+			});
 	});
+
+	// html2canvas renders the group-title SVG icons (cocktail glass, beer mug,
+	// etc.) with visibly wrong, background-dependent fill opacity under the
+	// black/white dual-capture used for export (confirmed by comparing the two
+	// raw captures directly: the same "opaque" fill looked solid on black but
+	// washed out near-white on white, which should never happen for a real
+	// opaque fill) -- so exactly like the corner leaves, these icons are
+	// measured, hidden from the DOM capture, and redrawn by hand with Canvas
+	// 2D afterward instead of being left to html2canvas.
+	var GROUP_ICON_DEFS = {
+		'cocktail-icon': {
+			viewBox: { minX: -4, minY: -4, width: 56, height: 52 },
+			shapes: [
+				{ d: 'M4 4H44L24 26Z', fill: '#123018', stroke: '#39ff6a', strokeWidth: 2 },
+				{ cx: 24, cy: 14, r: 3, fill: '#123018', stroke: '#39ff6a', strokeWidth: 2 },
+				{ d: 'M24 26V40', fill: 'none', stroke: '#39ff6a', strokeWidth: 2 },
+				{ d: 'M13 44H35', fill: 'none', stroke: '#39ff6a', strokeWidth: 2 },
+				{ d: 'M26.5 12L34 0', fill: 'none', stroke: '#39ff6a', strokeWidth: 2 }
+			]
+		},
+		'beer-icon': {
+			viewBox: { minX: -4, minY: -4, width: 56, height: 52 },
+			shapes: [
+				{ d: 'M10 10H38V44H10Z', fill: '#123018', stroke: '#39ff6a', strokeWidth: 2 },
+				{ d: 'M9 9Q13 2 17 9Q21 2 25 9Q29 2 33 9Q37 2 38 9', fill: 'none', stroke: '#39ff6a', strokeWidth: 2 },
+				{ d: 'M38 16C48 16 48 34 38 34', fill: 'none', stroke: '#39ff6a', strokeWidth: 2 },
+				{ cx: 20, cy: 24, r: 1.6, fill: 'none', stroke: '#39ff6a', strokeWidth: 1.4 },
+				{ cx: 27, cy: 31, r: 1.3, fill: 'none', stroke: '#39ff6a', strokeWidth: 1.4 }
+			]
+		},
+		'soda-icon': {
+			viewBox: { minX: -2, minY: -2, width: 28, height: 52 },
+			shapes: [
+				{
+					d: 'M9 0H15V4L18 10L20 16L17 26L20 36L19 48H5L4 36L7 26L4 16L6 10L9 4Z',
+					fill: '#123018',
+					stroke: '#39ff6a',
+					strokeWidth: 1.6
+				},
+				{ d: 'M9 2H15', fill: 'none', stroke: '#39ff6a', strokeWidth: 1.4 },
+				{ d: 'M6 30H18', fill: 'none', stroke: '#39ff6a', strokeWidth: 1.4 }
+			]
+		},
+		'shot-icon': {
+			viewBox: { minX: -2, minY: -2, width: 42, height: 34 },
+			shapes: [
+				{ d: 'M2 12H10L9 28H3Z', fill: '#123018', stroke: '#39ff6a', strokeWidth: 1.6 },
+				{ d: 'M14 6H24L22.5 28H15.5Z', fill: '#123018', stroke: '#39ff6a', strokeWidth: 1.6 },
+				{ d: 'M28 12H36L35 28H29Z', fill: '#123018', stroke: '#39ff6a', strokeWidth: 1.6 },
+				{ d: 'M17 9L19 7', fill: 'none', stroke: '#39ff6a', strokeWidth: 1.4 }
+			]
+		},
+		'wine-icon': {
+			viewBox: { minX: -4, minY: -4, width: 56, height: 52 },
+			shapes: [
+				{ d: 'M6 6C6 18 14 26 24 26C34 26 42 18 42 6Z', fill: '#123018', stroke: '#39ff6a', strokeWidth: 2 },
+				{ d: 'M24 26V40', fill: 'none', stroke: '#39ff6a', strokeWidth: 1.4 },
+				{ d: 'M13 44H35', fill: 'none', stroke: '#39ff6a', strokeWidth: 1.4 },
+				{ d: 'M11 13Q24 20 37 13', fill: 'none', stroke: '#39ff6a', strokeWidth: 1.4 },
+				{ d: 'M12 9L14 7', fill: 'none', stroke: '#39ff6a', strokeWidth: 1.4 }
+			]
+		},
+		'snack-icon': {
+			viewBox: { minX: -2, minY: -4, width: 34, height: 30 },
+			shapes: [
+				{ d: 'M4 3C18 1 28 8 30 14C28 20 18 27 4 25Z', fill: '#123018', stroke: '#39ff6a', strokeWidth: 1.3 },
+				{ d: 'M12 3Q14 -2 17 2Q15 4 12 3Z', fill: '#123018', stroke: '#39ff6a', strokeWidth: 1.3 },
+				{ cx: 19, cy: 10, r: 1.8, fill: '#39ff6a', stroke: 'none' },
+				{ d: 'M6 9Q9 14 6 19', fill: 'none', stroke: '#39ff6a', strokeWidth: 1 },
+				{ d: 'M26 17Q30 17.5 28 20', fill: 'none', stroke: '#39ff6a', strokeWidth: 1 }
+			]
+		}
+	};
+
+	// x/y/width/height are CSS px relative to the export container (as measured
+	// via getBoundingClientRect); scale is the export's DPI multiplier.
+	function drawGroupIcon(ctx, iconKey, x, y, width, height, scale) {
+		var def = GROUP_ICON_DEFS[iconKey];
+		if (!def) return;
+		var vb = def.viewBox;
+		var fitScale = Math.min(width / vb.width, height / vb.height);
+		var vbCenterX = vb.minX + vb.width / 2;
+		var vbCenterY = vb.minY + vb.height / 2;
+		var boxCenterX = (x + width / 2) * scale;
+		var boxCenterY = (y + height / 2) * scale;
+
+		ctx.save();
+		ctx.translate(boxCenterX - vbCenterX * fitScale * scale, boxCenterY - vbCenterY * fitScale * scale);
+		ctx.scale(fitScale * scale, fitScale * scale);
+		ctx.lineCap = 'round';
+		ctx.lineJoin = 'round';
+
+		def.shapes.forEach(function (shape) {
+			ctx.beginPath();
+			if (shape.d) {
+				var path = new Path2D(shape.d);
+				ctx.lineWidth = shape.strokeWidth || 1;
+				if (shape.fill !== 'none') {
+					ctx.fillStyle = shape.fill;
+					ctx.fill(path);
+				}
+				if (shape.stroke !== 'none') {
+					ctx.strokeStyle = shape.stroke;
+					ctx.stroke(path);
+				}
+			} else {
+				ctx.arc(shape.cx, shape.cy, shape.r, 0, Math.PI * 2);
+				ctx.lineWidth = shape.strokeWidth || 1;
+				if (shape.fill !== 'none') {
+					ctx.fillStyle = shape.fill;
+					ctx.fill();
+				}
+				if (shape.stroke !== 'none') {
+					ctx.strokeStyle = shape.stroke;
+					ctx.stroke();
+				}
+			}
+		});
+
+		ctx.restore();
+	}
 
 	var LEAF_PATH_D =
 		'M0,0 C-8,-30 -50,-45 -50,-85 C-50,-108 -25,-115 -10,-100 C-4,-94 0,-88 0,-82 C0,-88 4,-94 10,-100 C25,-115 50,-108 50,-85 C50,-45 8,-30 0,0 Z' +
@@ -202,14 +381,67 @@
 	// measured height) instead of right/bottom/percentage + transform.
 	function computeLeafRects(width, height) {
 		return [
-			{ left: -70, top: -60, width: 260, height: 390, opacity: 0.5 }, // tl
-			{ left: width - 220 + 90, top: -40, width: 220, height: 330, opacity: 0.35 }, // tr
-			{ left: -60, top: height - 360 + 80, width: 240, height: 360, opacity: 0.4 }, // bl
-			{ left: width - 280 + 80, top: height - 420 + 70, width: 280, height: 420, opacity: 0.55 }, // br
-			{ left: width * 0.5 - 100, top: height * 0.45 - 150, width: 200, height: 300, opacity: 0.14 }, // mid
-			{ left: width * 0.55 - 80, top: -30, width: 160, height: 240, opacity: 0.22 }, // top
-			{ left: -50, top: height * 0.55 - 127.5, width: 170, height: 255, opacity: 0.24 }, // left
-			{ left: width - 150 + 40, top: height * 0.2, width: 150, height: 225, opacity: 0.2 } // right
+			{ left: -70, top: -60, width: 260, height: 390, opacity: 0.5, rotate: 18 }, // tl
+			{
+				left: width - 220 + 90,
+				top: -40,
+				width: 220,
+				height: 330,
+				opacity: 0.35,
+				rotate: -150,
+				flipX: true
+			}, // tr
+			{
+				left: -60,
+				top: height - 360 + 80,
+				width: 240,
+				height: 360,
+				opacity: 0.4,
+				rotate: -20,
+				flipX: true
+			}, // bl
+			{
+				left: width - 280 + 80,
+				top: height - 420 + 70,
+				width: 280,
+				height: 420,
+				opacity: 0.55,
+				rotate: 165
+			}, // br
+			{
+				left: width * 0.5 - 100,
+				top: height * 0.45 - 150,
+				width: 200,
+				height: 300,
+				opacity: 0.14,
+				rotate: 8
+			}, // mid
+			{
+				left: width * 0.55 - 80,
+				top: -30,
+				width: 160,
+				height: 240,
+				opacity: 0.22,
+				rotate: 100,
+				flipX: true
+			}, // top
+			{
+				left: -50,
+				top: height * 0.55 - 127.5,
+				width: 170,
+				height: 255,
+				opacity: 0.24,
+				rotate: -55
+			}, // left
+			{
+				left: width - 150 + 40,
+				top: height * 0.2,
+				width: 150,
+				height: 225,
+				opacity: 0.2,
+				rotate: 60,
+				flipX: true
+			} // right
 		];
 	}
 
@@ -231,12 +463,18 @@
 			// uniformly (never stretch) and center within the box, instead of
 			// independently fitting width/height which distorted every leaf.
 			var s = Math.min(rect.width / VIEWBOX_W, rect.height / VIEWBOX_H);
-			var translateX = (rect.left + rect.width / 2) * scale;
-			var translateY = (rect.top + rect.height / 2 - VIEWBOX_CY * s) * scale;
+			var cx = (rect.left + rect.width / 2) * scale;
+			var cy = (rect.top + rect.height / 2) * scale;
 
 			ctx.save();
-			ctx.translate(translateX, translateY);
+			ctx.translate(cx, cy);
+			// Reproduce the live page's .leaf--* CSS transform (rotate then
+			// scaleX(-1)), applied around the box center same as CSS does,
+			// before the viewBox-fit scale below.
+			if (rect.rotate) ctx.rotate((rect.rotate * Math.PI) / 180);
+			if (rect.flipX) ctx.scale(-1, 1);
 			ctx.scale(s * scale, s * scale);
+			ctx.translate(0, -VIEWBOX_CY);
 			ctx.globalAlpha = rect.opacity;
 			ctx.fillStyle = '#123018';
 			ctx.strokeStyle = '#39ff6a';
@@ -298,51 +536,76 @@
 		var originalLabel = downloadBtn.textContent;
 		downloadBtn.textContent = 'Готовим изображение…';
 
-		var exportContainer = document.createElement('div');
-		exportContainer.className = 'a4-export';
-
-		var header = document.createElement('header');
-		header.className = 'menu-header';
-		header.style.position = 'relative';
-		header.style.zIndex = '1';
-		header.innerHTML =
-			'<span class="kicker">— добро пожаловать в —</span>' +
-			'<h1>Green&nbsp;Chaos&nbsp;Pub</h1>' +
-			'<p class="subtitle">Барная карта</p>' +
-			'<div class="ornament"><span class="ornament__line"></span><span class="ornament__leaf">❦</span><span class="ornament__line"></span></div>';
-		exportContainer.appendChild(header);
-
-		var main = document.createElement('main');
-		main.className = 'menu-columns';
-		main.style.position = 'relative';
-		main.style.zIndex = '1';
-		renderMenuSections(MenuStore.load(), main);
-		exportContainer.appendChild(main);
-
-		var footer = document.createElement('footer');
-		footer.className = 'menu-footer';
-		footer.style.position = 'relative';
-		footer.style.zIndex = '1';
-		footer.innerHTML =
-			'<div class="ornament"><span class="ornament__line"></span><span class="ornament__leaf">❦</span><span class="ornament__line"></span></div>' +
-			'<p class="copyright">&copy; 2026 Green Chaos Pub</p>';
-		exportContainer.appendChild(footer);
-
-		document.body.appendChild(exportContainer);
-
 		var exportWidth = 1240;
-		var exportHeight = exportContainer.getBoundingClientRect().height;
 		var scale = 2;
+		var exportContainer = null;
 
-		document.fonts.ready
+		MenuStore.load()
+			.then(function (data) {
+				exportContainer = document.createElement('div');
+				exportContainer.className = 'a4-export';
+
+				var header = document.createElement('header');
+				header.className = 'menu-header';
+				header.style.position = 'relative';
+				header.style.zIndex = '1';
+				header.innerHTML =
+					'<span class="kicker">— добро пожаловать в —</span>' +
+					'<h1>Green&nbsp;Chaos&nbsp;Pub</h1>' +
+					'<p class="subtitle">Барная карта</p>' +
+					'<div class="ornament"><span class="ornament__line"></span><span class="ornament__leaf">❦</span><span class="ornament__line"></span></div>';
+				exportContainer.appendChild(header);
+
+				var main = document.createElement('main');
+				main.className = 'menu-columns';
+				main.style.position = 'relative';
+				main.style.zIndex = '1';
+				renderMenuSections(data, main);
+				exportContainer.appendChild(main);
+
+				var footer = document.createElement('footer');
+				footer.className = 'menu-footer';
+				footer.style.position = 'relative';
+				footer.style.zIndex = '1';
+				footer.innerHTML =
+					'<div class="ornament"><span class="ornament__line"></span><span class="ornament__leaf">❦</span><span class="ornament__line"></span></div>' +
+					'<p class="copyright">&copy; 2026 Green Chaos Pub</p>';
+				exportContainer.appendChild(footer);
+
+				document.body.appendChild(exportContainer);
+
+				return document.fonts.ready;
+			})
 			.then(function () {
+				// Measure each group-title icon's position (in CSS px relative to
+				// the export container) and hide it before html2canvas ever sees
+				// it -- visibility:hidden keeps the text layout identical (space
+				// still reserved) but excludes the icon from the capture entirely.
+				// It's redrawn by hand afterward via drawGroupIcon.
+				var containerRect = exportContainer.getBoundingClientRect();
+				var iconRects = [];
+				Array.prototype.forEach.call(exportContainer.querySelectorAll('.group__title-text svg'), function (svg) {
+					var rect = svg.getBoundingClientRect();
+					iconRects.push({
+						key: svg.getAttribute('class'),
+						x: rect.left - containerRect.left,
+						y: rect.top - containerRect.top,
+						width: rect.width,
+						height: rect.height
+					});
+					svg.style.visibility = 'hidden';
+				});
+
 				return Promise.all([
 					html2canvas(exportContainer, { scale: scale, backgroundColor: '#000000' }),
 					html2canvas(exportContainer, { scale: scale, backgroundColor: '#ffffff' })
-				]);
+				]).then(function (renders) {
+					return { renders: renders, iconRects: iconRects };
+				});
 			})
-			.then(function (renders) {
-				var contentCanvas = extractAlphaCanvas(renders[0], renders[1]);
+			.then(function (result) {
+				var exportHeight = exportContainer.getBoundingClientRect().height;
+				var contentCanvas = extractAlphaCanvas(result.renders[0], result.renders[1]);
 
 				var finalCanvas = document.createElement('canvas');
 				finalCanvas.width = exportWidth * scale;
@@ -350,6 +613,10 @@
 				var ctx = finalCanvas.getContext('2d');
 				drawExportBackground(ctx, scale, exportWidth, exportHeight);
 				ctx.drawImage(contentCanvas, 0, 0);
+
+				result.iconRects.forEach(function (rect) {
+					drawGroupIcon(ctx, rect.key, rect.x, rect.y, rect.width, rect.height, scale);
+				});
 
 				var link = document.createElement('a');
 				link.download = 'green-chaos-pub-menu.jpg';
@@ -361,11 +628,42 @@
 				showStatus('Не удалось создать изображение. Попробуйте ещё раз.');
 			})
 			.finally(function () {
-				exportContainer.remove();
+				if (exportContainer) exportContainer.remove();
 				downloadBtn.disabled = false;
 				downloadBtn.textContent = originalLabel;
 			});
 	});
 
-	showReadView();
+	function unlockAdmin() {
+		loginGate.hidden = true;
+		adminGated.hidden = false;
+		showReadView();
+	}
+
+	function lockAdmin() {
+		sessionStorage.removeItem(AUTH_KEY);
+		adminGated.hidden = true;
+		loginGate.hidden = false;
+		loginPass.value = '';
+		loginUser.focus();
+	}
+
+	loginGate.addEventListener('submit', function (event) {
+		event.preventDefault();
+		if (loginUser.value === ADMIN_LOGIN && loginPass.value === ADMIN_PASSWORD) {
+			sessionStorage.setItem(AUTH_KEY, 'true');
+			loginError.textContent = '';
+			unlockAdmin();
+		} else {
+			loginError.textContent = 'Неверный логин или пароль.';
+			loginPass.value = '';
+			loginPass.focus();
+		}
+	});
+
+	logoutBtn.addEventListener('click', lockAdmin);
+
+	if (sessionStorage.getItem(AUTH_KEY) === 'true') {
+		unlockAdmin();
+	}
 })();

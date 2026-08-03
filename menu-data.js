@@ -23,7 +23,7 @@ window.DEFAULT_MENU_DATA = [
 	{
 		title: 'Пиво',
 		items: [
-			{ name: 'Крафт ТРА', note: '6.8% / 7.5%', price: '90k' },
+			{ name: 'Крафт IPA', note: '6.8% / 7.5%', price: '90k' },
 			{ name: 'Крафт Lager / AI.F.', price: '80k' },
 			{ name: 'Крафт Blanche', price: '70k' },
 			{ name: 'Лаосское', price: '50k' },

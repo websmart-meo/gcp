@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&family=Yeseva+One&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../style.css" />
@@ -66,27 +66,50 @@
         </div>
       </header>
 
-      <div class="admin-toolbar">
-        <button id="editBtn" class="btn btn--primary" type="button">Редактировать</button>
-        <button id="saveBtn" class="btn btn--primary" type="button" hidden>Сохранить</button>
-        <button id="cancelBtn" class="btn btn--ghost" type="button" hidden>Отмена</button>
-        <button id="downloadBtn" class="btn btn--ghost" type="button">Скачать меню (JPG)</button>
-        <button id="resetBtn" class="btn btn--danger-ghost" type="button">
-          Сбросить к исходному меню
-        </button>
-      </div>
-      <p id="statusMsg" class="admin-status" aria-live="polite"></p>
+      <form id="loginGate" class="login-gate">
+        <h2 class="login-gate__title">Вход в админ-панель</h2>
+        <input
+          id="loginUser"
+          class="admin-input login-gate__input"
+          type="text"
+          placeholder="Логин"
+          autocomplete="username"
+        />
+        <input
+          id="loginPass"
+          class="admin-input login-gate__input"
+          type="password"
+          placeholder="Пароль"
+          autocomplete="current-password"
+        />
+        <button type="submit" class="btn btn--primary login-gate__submit">Войти</button>
+        <p id="loginError" class="login-gate__error" aria-live="polite"></p>
+      </form>
 
-      <main class="menu-columns" id="menuColumns"></main>
-
-      <footer class="menu-footer">
-        <div class="ornament">
-          <span class="ornament__line"></span>
-          <span class="ornament__leaf">❦</span>
-          <span class="ornament__line"></span>
+      <div id="adminGated" hidden>
+        <div class="admin-toolbar">
+          <button id="editBtn" class="btn btn--primary" type="button">Редактировать</button>
+          <button id="saveBtn" class="btn btn--primary" type="button" hidden>Сохранить</button>
+          <button id="cancelBtn" class="btn btn--ghost" type="button" hidden>Отмена</button>
+          <button id="downloadBtn" class="btn btn--ghost" type="button">Скачать меню (JPG)</button>
+          <button id="resetBtn" class="btn btn--danger-ghost" type="button">
+            Сбросить к исходному меню
+          </button>
+          <button id="logoutBtn" class="btn btn--ghost" type="button">Выйти</button>
         </div>
-        <p class="copyright">&copy; 2026 Green Chaos Pub</p>
-      </footer>
+        <p id="statusMsg" class="admin-status" aria-live="polite"></p>
+
+        <main class="menu-columns" id="menuColumns"></main>
+
+        <footer class="menu-footer">
+          <div class="ornament">
+            <span class="ornament__line"></span>
+            <span class="ornament__leaf">❦</span>
+            <span class="ornament__line"></span>
+          </div>
+          <p class="copyright">&copy; 2026 Green Chaos Pub</p>
+        </footer>
+      </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
