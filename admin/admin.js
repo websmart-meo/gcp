@@ -568,9 +568,69 @@
 		return outCanvas;
 	}
 
+	// iOS Safari/Chrome (both run on WebKit -- Apple requires every iOS
+	// browser to) doesn't reliably honor the `download` attribute on <a>,
+	// especially for blob/data URIs: it either silently does nothing or just
+	// opens the image instead of saving it. Desktop (and Android) browsers
+	// already download the image correctly with the plain link, so the Web
+	// Share workaround below is scoped to iOS specifically -- some desktop
+	// browsers (e.g. Chrome) technically support navigator.share too, which
+	// would otherwise pop up an unfamiliar share picker there instead of the
+	// direct, silent download users already expect.
+	var IS_IOS = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+	var downloadBtnDefaultLabel = downloadBtn.textContent;
+	var pendingDownloadBlob = null;
+
+	function triggerSaveOrShare(blob) {
+		var fileName = 'green-chaos-pub-menu.jpg';
+
+		if (IS_IOS) {
+			var file;
+			try {
+				file = new File([blob], fileName, { type: 'image/jpeg' });
+			} catch (e) {
+				file = null;
+			}
+
+			if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+				navigator.share({ files: [file], title: 'Green Chaos Pub — меню' }).catch(function (err) {
+					// AbortError just means the user closed the share sheet
+					// without picking anything -- not a failure worth reporting.
+					if (!err || err.name !== 'AbortError') {
+						console.error(err);
+						showStatus('Не удалось поделиться изображением.');
+					}
+				});
+				return;
+			}
+		}
+
+		var link = document.createElement('a');
+		link.download = fileName;
+		link.href = URL.createObjectURL(blob);
+		link.click();
+		setTimeout(function () {
+			URL.revokeObjectURL(link.href);
+		}, 10000);
+	}
+
 	downloadBtn.addEventListener('click', function () {
+		// Second click (iOS only -- pendingDownloadBlob is never set
+		// elsewhere): the image is already rendered and waiting. This click
+		// is a fresh, live user gesture -- required by the Web Share API --
+		// unlike the first click, which kicked off the (comparatively slow)
+		// rendering below and can no longer be used to authorize a share/save.
+		if (pendingDownloadBlob) {
+			var blob = pendingDownloadBlob;
+			pendingDownloadBlob = null;
+			downloadBtn.textContent = downloadBtnDefaultLabel;
+			showStatus('');
+			triggerSaveOrShare(blob);
+			return;
+		}
+
 		downloadBtn.disabled = true;
-		var originalLabel = downloadBtn.textContent;
 		downloadBtn.textContent = 'Готовим изображение…';
 
 		var exportWidth = 1240;
@@ -669,19 +729,44 @@
 					drawGroupIcon(ctx, rect.key, rect.x, rect.y, rect.width, rect.height, scale);
 				});
 
-				var link = document.createElement('a');
-				link.download = 'green-chaos-pub-menu.jpg';
-				link.href = finalCanvas.toDataURL('image/jpeg', 0.92);
-				link.click();
+				return new Promise(function (resolve, reject) {
+					finalCanvas.toBlob(
+						function (blob) {
+							if (blob) {
+								resolve(blob);
+							} else {
+								reject(new Error('toBlob returned null'));
+							}
+						},
+						'image/jpeg',
+						0.92
+					);
+				});
+			})
+			.then(function (blob) {
+				if (IS_IOS) {
+					// Don't save/share yet -- see the note above
+					// triggerSaveOrShare. Wait for one more real tap, which is
+					// what actually fires it.
+					pendingDownloadBlob = blob;
+					downloadBtn.disabled = false;
+					downloadBtn.textContent = 'Нажмите, чтобы сохранить';
+					showStatus('Изображение готово — нажмите кнопку ещё раз, чтобы сохранить.');
+				} else {
+					// Desktop/Android: unchanged, original single-click behavior.
+					triggerSaveOrShare(blob);
+					downloadBtn.disabled = false;
+					downloadBtn.textContent = downloadBtnDefaultLabel;
+				}
 			})
 			.catch(function (err) {
 				console.error(err);
 				showStatus('Не удалось создать изображение. Попробуйте ещё раз.');
+				downloadBtn.disabled = false;
+				downloadBtn.textContent = downloadBtnDefaultLabel;
 			})
 			.finally(function () {
 				if (exportContainer) exportContainer.remove();
-				downloadBtn.disabled = false;
-				downloadBtn.textContent = originalLabel;
 			});
 	});
 
