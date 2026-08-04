@@ -321,6 +321,17 @@
 		}
 	};
 
+	// Mirrors the `filter: drop-shadow(...)` neon glow CSS gives every .leaf
+	// and group-title icon (see style.css) -- ctx.filter accepts the same
+	// syntax, but blur radii are CSS px so they need scaling up to match the
+	// export's DPI multiplier.
+	function neonGlowFilter(scale, nearPx, nearAlpha, farPx, farAlpha) {
+		return (
+			'drop-shadow(0 0 ' + nearPx * scale + 'px rgba(57, 255, 106, ' + nearAlpha + ')) ' +
+			'drop-shadow(0 0 ' + farPx * scale + 'px rgba(57, 255, 106, ' + farAlpha + '))'
+		);
+	}
+
 	// x/y/width/height are CSS px relative to the export container (as measured
 	// via getBoundingClientRect); scale is the export's DPI multiplier.
 	function drawGroupIcon(ctx, iconKey, x, y, width, height, scale) {
@@ -338,6 +349,7 @@
 		ctx.scale(fitScale * scale, fitScale * scale);
 		ctx.lineCap = 'round';
 		ctx.lineJoin = 'round';
+		ctx.filter = neonGlowFilter(scale, 5, 0.55, 14, 0.28);
 
 		def.shapes.forEach(function (shape) {
 			ctx.beginPath();
@@ -381,7 +393,7 @@
 	// measured height) instead of right/bottom/percentage + transform.
 	function computeLeafRects(width, height) {
 		return [
-			{ left: -70, top: -60, width: 260, height: 390, opacity: 0.5, rotate: 18 }, // tl
+			{ left: -70, top: -60, width: 260, height: 390, opacity: 0.2, rotate: 18 }, // tl
 			{
 				left: width - 220 + 90,
 				top: -40,
@@ -405,7 +417,7 @@
 				top: height - 420 + 70,
 				width: 280,
 				height: 420,
-				opacity: 0.55,
+				opacity: 0.2,
 				rotate: 165
 			}, // br
 			{
@@ -452,11 +464,17 @@
 	// never touch the DOM for export: they're drawn directly with Canvas 2D
 	// (Path2D understands the same SVG path syntax) onto the base canvas,
 	// which html2canvas's separately-captured content is then drawn over.
-	function drawLeavesOnCanvas(ctx, scale, width, height) {
+	// extraBlurPx (device px) is only set while faking .group's backdrop-blur
+	// (see blurBackgroundUnderGroups) -- it has to be folded into each leaf's
+	// own ctx.filter rather than relied on as ambient state, because each leaf
+	// sets its own filter (for its neon glow) inside its own save/restore,
+	// which would otherwise silently drop any filter set by the caller.
+	function drawLeavesOnCanvas(ctx, scale, width, height, extraBlurPx) {
 		var path = new Path2D(LEAF_PATH_D);
 		var VIEWBOX_W = 260;
 		var VIEWBOX_H = 270;
 		var VIEWBOX_CY = 5; // center of viewBox="-130 -130 260 270" (x center is 0)
+		var blurPrefix = extraBlurPx ? 'blur(' + extraBlurPx + 'px) ' : '';
 
 		computeLeafRects(width, height).forEach(function (rect) {
 			// Match SVG's default preserveAspectRatio="xMidYMid meet": scale
@@ -476,6 +494,7 @@
 			ctx.scale(s * scale, s * scale);
 			ctx.translate(0, -VIEWBOX_CY);
 			ctx.globalAlpha = rect.opacity;
+			ctx.filter = blurPrefix + neonGlowFilter(scale, 6, 0.6, 18, 0.3);
 			ctx.fillStyle = '#123018';
 			ctx.strokeStyle = '#39ff6a';
 			ctx.lineWidth = 2.4;
@@ -485,14 +504,32 @@
 		});
 	}
 
-	function drawExportBackground(ctx, scale, width, height) {
+	function drawExportBackground(ctx, scale, width, height, extraBlurPx) {
 		var gradient = ctx.createLinearGradient(0, 0, width * 0.3 * scale, height * scale);
 		gradient.addColorStop(0, '#163b1c');
 		gradient.addColorStop(0.65, '#0d2612');
 		gradient.addColorStop(1, '#061a0c');
+		ctx.filter = extraBlurPx ? 'blur(' + extraBlurPx + 'px)' : 'none';
 		ctx.fillStyle = gradient;
 		ctx.fillRect(0, 0, width * scale, height * scale);
-		drawLeavesOnCanvas(ctx, scale, width, height);
+		drawLeavesOnCanvas(ctx, scale, width, height, extraBlurPx);
+	}
+
+	// .a4-export .group turns off `backdrop-filter: blur(3px)` (see style.css)
+	// because html2canvas can't rasterize it, so it's faked here: clip to each
+	// group's measured rect and repaint the same background+leaves through
+	// ctx.filter blur, matching what backdrop-filter would have sampled from
+	// the content actually behind that card.
+	function blurBackgroundUnderGroups(ctx, scale, width, height, groupRects) {
+		var blurPx = 3 * scale;
+		groupRects.forEach(function (rect) {
+			ctx.save();
+			ctx.beginPath();
+			ctx.rect(rect.x * scale, rect.y * scale, rect.width * scale, rect.height * scale);
+			ctx.clip();
+			drawExportBackground(ctx, scale, width, height, blurPx);
+			ctx.restore();
+		});
 	}
 
 	// html2canvas ignores `background: none` / `backgroundColor: null` here and
@@ -596,11 +633,24 @@
 					svg.style.visibility = 'hidden';
 				});
 
+				// Measure each card's rect too, so its backdrop-blur can be faked
+				// on the canvas below (see blurBackgroundUnderGroups).
+				var groupRects = [];
+				Array.prototype.forEach.call(exportContainer.querySelectorAll('.group'), function (group) {
+					var rect = group.getBoundingClientRect();
+					groupRects.push({
+						x: rect.left - containerRect.left,
+						y: rect.top - containerRect.top,
+						width: rect.width,
+						height: rect.height
+					});
+				});
+
 				return Promise.all([
 					html2canvas(exportContainer, { scale: scale, backgroundColor: '#000000' }),
 					html2canvas(exportContainer, { scale: scale, backgroundColor: '#ffffff' })
 				]).then(function (renders) {
-					return { renders: renders, iconRects: iconRects };
+					return { renders: renders, iconRects: iconRects, groupRects: groupRects };
 				});
 			})
 			.then(function (result) {
@@ -612,6 +662,7 @@
 				finalCanvas.height = exportHeight * scale;
 				var ctx = finalCanvas.getContext('2d');
 				drawExportBackground(ctx, scale, exportWidth, exportHeight);
+				blurBackgroundUnderGroups(ctx, scale, exportWidth, exportHeight, result.groupRects);
 				ctx.drawImage(contentCanvas, 0, 0);
 
 				result.iconRects.forEach(function (rect) {
